@@ -1,0 +1,15 @@
+[main]
+# Duration of single sar probe in seconds. Must be >0
+probe_duration=300
+# Count of sar probes. Must be >0
+probe_count=2
+# Interval between sar calls in seconds. Can be 0.
+probe_interval=300
+# Minimal value of traffic. On linux sar is in kilobytes. Cannot be 0.
+threshold_value=8
+# Your physical interface. Better to use physical interface to meausre traffic. Avoid virtual interfaces for false positive/negative results.
+interface=enp2s0
+# Command to execute (usually suspend). One can safely add sudo if passwordless sudo for this command is set up properly and script running without root permissions.
+command=systemctl suspend
+# Back-off interval in seconds after command execution. Usually used to let system wake from sleep. Can be 0, but for predictable results use something like 10 seconds.
+command_backoff_interval=10

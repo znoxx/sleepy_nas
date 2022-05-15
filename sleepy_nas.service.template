@@ -1,0 +1,16 @@
+[Unit]
+Description=Sleepy NAS service
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/env python3 /opt/sleepy_nas/sleepy_nas.py /opt/sleepy_nas/sleepy_nas.ini
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=sleepy_nas
+WorkingDirectory=/opt/sleepy_nas
+KillSignal=SIGINT
+TimeoutSec=20
+
+[Install]
+WantedBy=multi-user.target
