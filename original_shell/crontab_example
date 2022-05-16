@@ -1,0 +1,1 @@
+*/15 * * * * /usr/local/sbin/shutdown-if-idle.sh > /dev/null 2>&1
