@@ -10,20 +10,20 @@ Why it is needed:
 * Your NAS eats some electricity (x86 hardware)
 * Electricity costs money, better sleep is priceless :)
 
-For sure -- spin-up and spin-down time of HDD drives can be not the best trade-off. It depends on 
+For sure -- spin-up and spin-down counts of HDD drives can be not the best trade-off. So, descision is up to you.
 
 ## Prerequisites
 
-* Modern Linux system 
+* Modern Linux system (systemd is recommended)
 * Python 3.x
 * sysstat package version 11.7.4+ (older versions does not provide needed flags but still somehow usable after code modifications).
 * Working command to put system to sleep (e.g. `systemctl susped`)
 * Working way to wake your system (WOL support or even physical button)
 
 ## What script does
-* Measure traffic on selected interface in way described in .ini file
-* If sum of rx/tx kb per second is below or equal to selected threshold -- puts your server to sleep (or executes desired command)
-* If sum of rx/tx kb per second is above threshold -- script sleeps for desired amount of time and then repeats measurement
+* Measures traffic on selected interface in way described in .ini file
+* If sum of rx/tx kb per second is below or equal to selected threshold -- puts your server to sleep (or executes desired command).
+* If sum of rx/tx kb per second is above threshold -- script sleeps for desired amount of time and then repeats measurement.
 
 sar tool, which is used inside script can do N probes for particular interface for desired period of time and provide average speeds for rx/tx
 
@@ -75,13 +75,13 @@ command_backoff_interval=10
 So timeline will be:
 
 * Start measurement
-* Measure for `probe_duration*probe_count` (total -- 600 seconds)
-* If threshold is below 8kb/s -- `systemctl suspend` will be called
-* After wake up (if we were below threshold and gone to sleep ) `command_backoff_interval` sleep will be taken -- 10 seconds. (It allows to safely wait for system to wake up)
-* `probe_interval` sleep will be taken
-* Cycle will restart from the beginning (start measurement)
+* Measure for `probe_duration*probe_count` (total -- 600 seconds).
+* If threshold is below 8kb/s -- `systemctl suspend` will be called.
+* After wake up (if we were below threshold and gone to sleep ).`command_backoff_interval` sleep will be taken -- 10 seconds. (It allows to safely wait for system to wake up).
+* `probe_interval` sleep will be taken.
+* Cycle will restart from the beginning (start measurement).
 
-Current settings are ok with me, e.g. I use NAS to broadcast movies via PLEX before bedtime. When I'm done with a movie, my NAS will automagically go to sleep since there will be no traffic.
+Current settings work for me, e.g. I use NAS to broadcast movies via PLEX before bedtime. When I'm done with a movie, my NAS will automagically go to sleep since there will be no traffic.
 
 ## Running script
 
@@ -108,22 +108,22 @@ Ini template contains some numbers, which "work for me".
 
 ## Using it via systemd
 
-* Copy script itself to /opt/sleepy_nas/sleepy_nas.py
-* Copy INI file -- `cp sleepy_nas.ini.template /opt/sleepy_nas/sleepy_nas.ini`
-* Modify file `/opt/sleepy_nas/sleepy_nas.ini` and put your own values. Make sure selected command to suspend system is working (see prerequisites section)
-* Copy systemd service file -- `cp sleepy_nas.service.tempate /lib/systemd/system/sleepy_nas.service`
-* Modify file `/lib/systemd/system/sleepy_nas.service` if needed, however it is completely generic. Avoid to change KillSignal value, since SIGINT is used to gracefully stop the script
-* Enable service: `sudo systemctl enable sleepy_nas`
-* Start service: `sudo systemctl start sleepy_nas`
+* Copy script itself to /opt/sleepy_nas/sleepy_nas.py.
+* Copy INI file -- `cp sleepy_nas.ini.template /opt/sleepy_nas/sleepy_nas.ini`.
+* Modify file `/opt/sleepy_nas/sleepy_nas.ini` and put your own values. Make sure selected command to suspend system is working (see prerequisites section).
+* Copy systemd service file -- `cp sleepy_nas.service.tempate /lib/systemd/system/sleepy_nas.service`.
+* Modify file `/lib/systemd/system/sleepy_nas.service` if needed, however it is completely generic. Avoid to change KillSignal value, since SIGINT is used to gracefully stop the script.
+* Enable service: `sudo systemctl enable sleepy_nas`.
+* Start service: `sudo systemctl start sleepy_nas`.
 
 You can stop tool at any time via `systemctl stop sleepy_nas` and enjoy your server running 24x7.
 
-Enjoy some savings on electricity bill and better sleep :)
+Enjoy some savings on electricity bill and better sleep :).
 
 ## Area of improvement
 
 * sar profiler to collect data of network usage and generate recommend values.
-* Get rid of "sar" dependency -- implement iface statistics on pure python
+* Get rid of "sar" dependency -- implement iface statistics on pure python.
 * Checks of BSD systems (unfortunately I don't have any at hand, but it should be easy).
 
 ## Tested platforms
@@ -132,9 +132,9 @@ Tests are made on x86 systems, however should be no problem running it on ARM-ba
 
 Tested on:
 
-* Ubuntu 20.04 -- my own production NAS
-* Manjaro (rolling release) 
-* Fedora 34 (sar command only to produce expected results)
+* Ubuntu 20.04 -- my own "production" NAS.
+* Manjaro (rolling release).
+* Fedora 34 (sar command only to produce expected results).
 
 ## Historical data
 
