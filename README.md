@@ -5,19 +5,21 @@ The purpose of this script is to measure traffic on selected physical interface 
 Why it is needed:
 
 * You don't use your NAS 24x7
-* The purpose of your NAS is to serve you your files via network.
+* The purpose of your NAS is to serve you your files via network
 * Your NAS provides some noise (ATX-based builds)
 * Your NAS eats some electricity (x86 hardware)
-* Electricity costs money, better sleep is priceless :)
+* Electricity costs money, better sleep is priceless
 
-For sure -- spin-up and spin-down counts of HDD drives can be not the best trade-off. So, descision is up to you.
+For sure -- spin-up and spin-down counts of HDD drives can be not the best trade-off (but modern systems still spindown HDDs to save power). 
+
+So, decision is up to you.
 
 ## Prerequisites
 
 * Modern Linux system (systemd is recommended)
 * Python 3.x
-* sysstat package version 11.7.4+ (older versions does not provide needed flags but still somehow usable after code modifications).
-* Working command to put system to sleep (e.g. `systemctl susped`)
+* sysstat package version 11.7.4+ (older versions do not provide needed flags but still somehow usable after code modifications).
+* Working command to put system to sleep (e.g. `systemctl suspend`)
 * Working way to wake your system (WOL support or even physical button)
 
 ## What script does
@@ -27,7 +29,7 @@ For sure -- spin-up and spin-down counts of HDD drives can be not the best trade
 
 sar tool, which is used inside script can do N probes for particular interface for desired period of time and provide average speeds for rx/tx
 
-Let's consider an exampe:
+Let's consider an example:
 
 ```
 $ LC_ALL=C sar -n DEV --dec=0 --iface=enp5s0 10 2
@@ -44,13 +46,13 @@ Average:       enp5s0         2         2         0         0         0         
 
 ```
 
-In this example measurement called for interface `enp5s0` 2 times 10 secods each. In total -- 20 seconds to get data.
+In this example measurement called for interface `enp5s0` 2 times 10 seconds each. In total -- 20 seconds to get data.
 
 Script takes fields "rxKB/s" and "txKB/s" and compares summary value to threshold defined in .ini file.
 
 One can play around with this tool and get some automated measurements 
 
-## Ini file parameters and timeline
+## INI file parameters and timeline
 
 Let's check parameters one by one:
 
@@ -81,7 +83,8 @@ So timeline will be:
 * `probe_interval` sleep will be taken.
 * Cycle will restart from the beginning (start measurement).
 
-Current settings work for me, e.g. I use NAS to broadcast movies via PLEX before bedtime. When I'm done with a movie, my NAS will automagically go to sleep since there will be no traffic.
+Current settings work for me, e.g. I use NAS to broadcast movies via PLEX before bedtime. 
+When I'm done with a movie, my NAS automagically goes to sleep after 20 minutes, since there is no traffic.
 
 ## Running script
 
@@ -100,11 +103,11 @@ options:
   -v, --verbose  increase output verbosity
 ```
 
-One must supply own values, described in .ini file. However, default values include dummy "suspend_stub_command" which will fail on execution (unless you have such command defined in your Linux :) ).
+One must supply own values, described in .ini file. However, default values include dummy "suspend_stub_command" which will fail on execution (unless you have such command defined in your Linux ).
 
 Good option is to run script with '--verbose' to see what is loaded and how it is running before putting it into everyday usage.
 
-Ini template contains some numbers, which "work for me".
+INI template contains some numbers, which "work for me".
 
 ## Using it via systemd
 
@@ -118,17 +121,18 @@ Ini template contains some numbers, which "work for me".
 
 You can stop tool at any time via `systemctl stop sleepy_nas` and enjoy your server running 24x7.
 
-Enjoy some savings on electricity bill and better sleep :).
+Enjoy some savings on electricity bill and better sleep.
 
-## Area of improvement
+## Area of improvement (someday)
 
-* sar profiler to collect data of network usage and generate recommend values.
 * Get rid of "sar" dependency -- implement iface statistics on pure python.
-* Checks of BSD systems (unfortunately I don't have any at hand, but it should be easy).
+* Checks of BSD systems (unfortunately I don't have any at hand).
 
 ## Tested platforms
 
-Tests are made on x86 systems, however should be no problem running it on ARM-based hardware. Still not sure, how sleep itself will work on ARM, same about WOL/other wakeups.
+Tests are made on x86 systems, however should be no problem running it on e.g. ARM-based hardware. 
+
+Generally it will work, if system can be put to sleep via command and wake up is possible via WOL or button.
 
 Tested on:
 
@@ -140,7 +144,7 @@ Tested on:
 
 This tool inspired by this post: https://hackaday.com/2013/02/21/self-waking-computer-for-diy-cloud-storage/
 
-Unfortunately, original post linked to HAD article in N/A. For some reasons I saved initial scripts for system sleep on "no traffic". They worked for me for years "somehow". but I decided to rework them to something more predictable and maintainable.
+Unfortunately, original post linked to H-a-D article in N/A. For some reasons I saved initial scripts for system sleep on "no traffic". They worked for me for years "somehow". but I decided to rework them to something more predictable and maintainable.
 
 You can find original shell scripts in folder "original_shell"
 
