@@ -146,7 +146,7 @@ This tool inspired by this post: https://hackaday.com/2013/02/21/self-waking-com
 
 Unfortunately, original post linked to H-a-D article in N/A. For some reasons I saved initial scripts for system sleep on "no traffic". They worked for me for years "somehow". but I decided to rework them to something more predictable and maintainable.
 
-You can find original shell scripts in folder "original_shell"
+You can find original shell scripts in folder "original_shell".
 
 
 
