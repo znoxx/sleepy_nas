@@ -15,5 +15,9 @@ command=systemctl suspend
 command_backoff_interval=10
 
 #[sidecar]
-#sidecar_address=http://localhost:10000
+#sidecar_address=http://always-on-host:10000
 #sidecar_server_id=server
+
+#[hooks]
+#before_sleep=/my/sleep/hooks
+#after_sleep=/my/wake/hooks

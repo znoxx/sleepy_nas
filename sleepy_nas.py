@@ -37,6 +37,11 @@ class ConfigError(Error):
     pass
 
 
+class HooksError(Error):
+    """Raised when problem with hooks occured"""
+    pass
+
+
 class Config:
     def __init__(self,
                  probe_duration=300,
@@ -48,7 +53,9 @@ class Config:
                  command_backoff_interval=30,
                  sidecar_enabled=False,
                  sidecar_address="",
-                 sidecar_server_id="unknown"
+                 sidecar_server_id="unknown",
+                 sleep_hooks="",
+                 wake_hooks=""
                  ):
         self.probe_duration = probe_duration
         self.probe_count = probe_count
@@ -60,6 +67,8 @@ class Config:
         self.sidecar_enabled = sidecar_enabled
         self.sidecar_address = sidecar_address
         self.sidecar_server_id = sidecar_server_id
+        self.sleep_hooks = sleep_hooks
+        self.wake_hooks = wake_hooks
 
     def __str__(self):
         return "probe_duration: {0}, \
@@ -69,9 +78,11 @@ class Config:
         command: {4}, \
         interface {5}, \
         command_backoff_interval {6},  \
-        sidecar_enabled {7} \
-        sidecar_address {8} \
-        sidecar_server_id {9}".format(
+        sidecar_enabled {7}, \
+        sidecar_address {8}, \
+        sidecar_server_id {9}, \
+        sleep_hooks {10}, \
+        wake_hooks {11} ".format(
             self.probe_duration,
             self.probe_count,
             self.probe_interval,
@@ -81,7 +92,9 @@ class Config:
             self.command_backoff_interval,
             self.sidecar_enabled,
             self.sidecar_address,
-            self.sidecar_server_id
+            self.sidecar_server_id,
+            self.sleep_hooks,
+            self.wake_hooks
         )
 
     def load_ini_file(self, ini_file):
@@ -126,6 +139,10 @@ class Config:
                 else:
                     self.sidecar_server_id = config.get("sidecar", "sidecar_server_id")
                     logging.debug("Sidecar config loaded, sidecar integration enabled")
+            if config.has_option("hooks", "before_sleep"):
+                self.sleep_hooks = config.get("hooks", "before_sleep")
+            if config.has_option("hooks", "after_sleep"):
+                self.wake_hooks = config.get("hooks", "after_sleep")
 
         except ConfigError:
             logging.exception("Configuration inconsistency")
@@ -234,7 +251,7 @@ def call_sidecar(sidecar_address, sidecar_server_id, sidecar_status, sidecar_tim
     from urllib.parse import urlencode
     from urllib.request import Request, urlopen
     logging.debug("Sidecar integration enabled, calling sidecar {0} to set server {1} status to {2}".
-                 format(sidecar_address, sidecar_server_id, sidecar_status))
+                  format(sidecar_address, sidecar_server_id, sidecar_status))
     request = Request(sidecar_address + "/status/" + sidecar_status + "/" + sidecar_server_id, urlencode({}).encode())
     try:
         json = urlopen(request, timeout=sidecar_timeout).read().decode()
@@ -242,6 +259,16 @@ def call_sidecar(sidecar_address, sidecar_server_id, sidecar_status, sidecar_tim
     except Exception as e:
         logging.error("Error accessing sidecar: {0}".format(e))
 
+
+def call_hooks(folder, onsleep=True):
+    from os import system
+    if onsleep:
+        logging.info("Calling pre-sleep hooks")
+        command_line = "run-parts --exit-on-error {0}".format(folder)
+    else:
+        logging.info("Calling post-wake hooks")
+        command_line = "run-parts  {0}".format(folder)
+    return system(command_line)
 
 
 def main(args, loglevel):
@@ -260,16 +287,32 @@ def main(args, loglevel):
                 stdout=DEVNULL,
                 stderr=STDOUT):
             raise SarError("sar command not found")
+        else:
+            logging.info("sar sanity check passed!")
     except SarError:
         logging.exception("sar sanity check failed")
         raise
 
-    logging.info("sar sanity check passed!")
+
 
     logging.debug("Loading config file {0}".format(args.ini))
     currentConfig = Config()
     currentConfig.load_ini_file(args.ini)
     logging.debug("Config loaded: {0}".format(currentConfig))
+
+    if currentConfig.sleep_hooks or currentConfig.wake_hooks:
+        try:
+            if call(['which', 'run-parts'],
+                    stdout=DEVNULL,
+                    stderr=STDOUT):
+                raise HooksError("run-parts command not found")
+            else:
+                logging.info("run-parts sanity check passed!")
+        except HooksError:
+            logging.exception("run-parts sanity check failed")
+            raise
+
+
 
     global running
     signal.signal(signal.SIGINT, sigint_handler)
@@ -281,13 +324,24 @@ def main(args, loglevel):
             if running:
                 logging.info("Threshold crossed, executing  command")
 
-                if currentConfig.sidecar_enabled:
-                    call_sidecar(currentConfig.sidecar_address, currentConfig.sidecar_server_id, "sleep")
+                can_i_sleep = True
+                if currentConfig.sleep_hooks:
+                    hook_res = call_hooks(currentConfig.sleep_hooks, True)
+                    if hook_res != 0:
+                        can_i_sleep = False
+                        logging.error("Sleep hooks execution failed, skipping command execution!")
 
-                call_command(currentConfig.command, currentConfig.command_backoff_interval)
+                if can_i_sleep:
+                    if currentConfig.sidecar_enabled:
+                        call_sidecar(currentConfig.sidecar_address, currentConfig.sidecar_server_id, "sleep")
 
-                if currentConfig.sidecar_enabled:
-                    call_sidecar(currentConfig.sidecar_address, currentConfig.sidecar_server_id, "wake")
+                    call_command(currentConfig.command, currentConfig.command_backoff_interval)
+
+                    if currentConfig.sidecar_enabled:
+                        call_sidecar(currentConfig.sidecar_address, currentConfig.sidecar_server_id, "wake")
+
+                    if currentConfig.wake_hooks:
+                        call_hooks(currentConfig.wake_hooks, False)
         else:
             logging.debug("Threshold not crossed -- average traffic is {0} kb/s continue...".format(result))
 
