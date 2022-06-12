@@ -45,7 +45,10 @@ class Config:
                  threshold_value=8,
                  interface="eth0",
                  command='suspend_stub_command',
-                 command_backoff_interval=30
+                 command_backoff_interval=30,
+                 sidecar_enabled=False,
+                 sidecar_address="",
+                 sidecar_server_id="unknown"
                  ):
         self.probe_duration = probe_duration
         self.probe_count = probe_count
@@ -54,6 +57,9 @@ class Config:
         self.command = command
         self.command_backoff_interval = command_backoff_interval
         self.interface = interface
+        self.sidecar_enabled = sidecar_enabled
+        self.sidecar_address = sidecar_address
+        self.sidecar_server_id = sidecar_server_id
 
     def __str__(self):
         return "probe_duration: {0}, \
@@ -62,14 +68,20 @@ class Config:
         threshold_value: {3}, \
         command: {4}, \
         interface {5}, \
-        command_backoff_interval {6}".format(
+        command_backoff_interval {6},  \
+        sidecar_enabled {7} \
+        sidecar_address {8} \
+        sidecar_server_id {9}".format(
             self.probe_duration,
             self.probe_count,
             self.probe_interval,
             self.threshold_value,
             self.command,
             self.interface,
-            self.command_backoff_interval
+            self.command_backoff_interval,
+            self.sidecar_enabled,
+            self.sidecar_address,
+            self.sidecar_server_id
         )
 
     def load_ini_file(self, ini_file):
@@ -105,6 +117,16 @@ class Config:
                 self.command_backoff_interval = config.getfloat("main", "command_backoff_interval")
                 if not (self.command_backoff_interval >= 0):
                     raise ConfigError("Command backoff interval {0} in invalid".format(self.command_backoff_interval))
+            if config.has_option("sidecar", "sidecar_address"):
+                self.sidecar_enabled = True
+                self.sidecar_address = config.get("sidecar", "sidecar_address")
+            if self.sidecar_enabled:
+                if not config.has_option("sidecar", "sidecar_server_id"):
+                    raise ConfigError("Server ID for sidecar is not set!")
+                else:
+                    self.sidecar_server_id = config.get("sidecar", "sidecar_server_id")
+                    logging.debug("Sidecar config loaded, sidecar integration enabled")
+
         except ConfigError:
             logging.exception("Configuration inconsistency")
             raise
@@ -208,6 +230,20 @@ def call_command(command, backoff_interval):
             pass
 
 
+def call_sidecar(sidecar_address, sidecar_server_id, sidecar_status, sidecar_timeout=2):
+    from urllib.parse import urlencode
+    from urllib.request import Request, urlopen
+    logging.debug("Sidecar integration enabled, calling sidecar {0} to set server {1} status to {2}".
+                 format(sidecar_address, sidecar_server_id, sidecar_status))
+    request = Request(sidecar_address + "/status/" + sidecar_status + "/" + sidecar_server_id, urlencode({}).encode())
+    try:
+        json = urlopen(request, timeout=sidecar_timeout).read().decode()
+        logging.info("Sidecar reply: {0}".format(json))
+    except Exception as e:
+        logging.error("Error accessing sidecar: {0}".format(e))
+
+
+
 def main(args, loglevel):
     try:
         if instance_already_running(label):
@@ -244,7 +280,14 @@ def main(args, loglevel):
         if result <= currentConfig.threshold_value:
             if running:
                 logging.info("Threshold crossed, executing  command")
+
+                if currentConfig.sidecar_enabled:
+                    call_sidecar(currentConfig.sidecar_address, currentConfig.sidecar_server_id, "sleep")
+
                 call_command(currentConfig.command, currentConfig.command_backoff_interval)
+
+                if currentConfig.sidecar_enabled:
+                    call_sidecar(currentConfig.sidecar_address, currentConfig.sidecar_server_id, "wake")
         else:
             logging.debug("Threshold not crossed -- average traffic is {0} kb/s continue...".format(result))
 

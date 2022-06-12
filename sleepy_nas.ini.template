@@ -13,3 +13,7 @@ interface=enp2s0
 command=systemctl suspend
 # Back-off interval in seconds after command execution. Usually used to let system wake from sleep. Can be 0, but for predictable results use something like 10 seconds.
 command_backoff_interval=10
+
+#[sidecar]
+#sidecar_address=http://localhost:10000
+#sidecar_server_id=server
