@@ -1,0 +1,26 @@
+##
+## Build
+##
+FROM golang:1.18.3-bullseye AS build
+
+WORKDIR /app
+ADD src /app/
+
+RUN go build -o /sidecar
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /sidecar
+##
+## Deploy
+##
+FROM debian:stable-slim
+
+WORKDIR /
+
+ENV SIDECAR_PORT=10000
+ENV SIDECAR_HOST=0.0.0.0
+ENV SIDECAR_CONFIG=sidecar.conf
+RUN useradd -u 10001 sidecaruser
+COPY --from=build /sidecar /sidecar
+USER sidecaruser
+EXPOSE 10000
+
+ENTRYPOINT /sidecar -config  $SIDECAR_CONFIG -address $SIDECAR_HOST -port $SIDECAR_PORT

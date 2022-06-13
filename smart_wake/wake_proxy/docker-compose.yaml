@@ -1,0 +1,15 @@
+version: '3'
+services:
+  wake_proxy:
+    build: ${PWD}
+    image: wake_proxy
+    container_name: wake_proxy
+    volumes:
+      - ${PWD}/conf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ${PWD}/html:/usr/share/nginx/html:ro
+    ports:
+      - 8888:80
+      - 2222:2222
+    restart: unless-stopped
+    mem_limit: 32m
+    cpus: 0.1
