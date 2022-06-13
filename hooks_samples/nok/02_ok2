@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "I am bad 2"
+exit 99
+
