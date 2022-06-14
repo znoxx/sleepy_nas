@@ -12,4 +12,4 @@ services:
       - 2222:2222
     restart: unless-stopped
     mem_limit: 32m
-    cpus: 0.1
+    cpus: 1
