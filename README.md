@@ -2,6 +2,11 @@
 
 The purpose of this script is to measure traffic on selected physical interface and put your server to sleep (or execute any other command) in case low threshold is crossed.
 
+It also supports hooks, which can be executed on pre-sleep step and post-wake step. See "Hooks" section for details.
+
+And, there is also a possibility to use "smart wake". This feature requires separate box running 24x7. Spoiler: Raspberry Pi-like server with docker support will do (Orange Pi Zero, for example). 
+More details can be found in this [document](smart_wake/README.md).
+
 Why it is needed:
 
 * You don't use your NAS 24x7
@@ -19,6 +24,7 @@ So, decision is up to you.
 * Modern Linux system (systemd is recommended)
 * Python 3.x
 * sysstat package version 11.7.4+ (older versions do not provide needed flags but still somehow usable after code modifications).
+* run-parts tool if hooks are enabled (see Hooks section)
 * Working command to put system to sleep (e.g. `systemctl suspend`)
 * Working way to wake your system (WOL support or even physical button)
 
@@ -85,6 +91,58 @@ So timeline will be:
 
 Current settings work for me, e.g. I use NAS to broadcast movies via PLEX before bedtime. 
 When I'm done with a movie, my NAS automagically goes to sleep after 20 minutes, since there is no traffic.
+
+### Hooks
+
+Hooks can be executed on pre-sleep stage and post-wake stage. Hooks are executed via run-parts tool, so tool existence is checked on startup, if hooks are enabled in .INI file.
+
+Before integration, hooks can be debugged and checked via command: `run-parts hooks_folder`. So, technically they are nothing but run-parts scripts.
+
+To enable hooks -- add following section into .INI file:
+
+```
+[hooks]
+before_sleep=/my/sleep/hooks
+after_sleep=/my/wake/hooks
+```
+
+Better to use absolute paths to hooks folders (for consistency and readability).
+
+
+#### Pre-sleep hooks
+
+The purpose of pre-sleep hooks is to avoid system sleep on certain conditions. If one of pre-sleep hooks returns non-zero exit code -- sleep command will not be executed.
+
+For example, my NAS starts raid resync for whatever reasons, has no traffic, and goes to sleep. Well, it should not. I create a small script, which greps /proc/mdstat and looks for "checking = " pattern.
+If pattern is found -- exit code 1 is returned. In other case -- return code is 0 and sleep is allowed.
+
+Another cases can be the following ones
+
+* Some process like dpkg is running 
+* System load is quite high 
+
+
+#### Post-wake hooks
+
+The purpose of post-wake hooks is to fix something, which behaves badly after wake-up. However, on healthy system this should be rare case. But anyway, one can for example restart docker container or service.
+
+Post-wake hooks are executed as is, even if return code is non-zero. Technically it is just a set of run-parts scripts.
+
+### Smart wake integration
+
+Smart wake provides a mechanism to wake computer "on demand" without using WOL utility or smartphone app with WOL functionality.
+
+One will need extra server in same network, e.g. Raspberry Pi-like system running 24x7 with Linux flavour supporting Docker.
+
+This part of .INI file is responsible for smart wake integration:
+
+```
+[sidecar]
+sidecar_address=http://always-on-host:10000
+sidecar_server_id=server
+```
+
+For details -- see this [document](smart_wake/README.md).
 
 ## Running script
 
