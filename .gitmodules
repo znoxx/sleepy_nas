@@ -1,0 +1,3 @@
+[submodule "smart_wake/wake_proxy/lua-resty-http"]
+	path = smart_wake/wake_proxy/lua-resty-http
+	url = https://github.com/ledgetech/lua-resty-http
