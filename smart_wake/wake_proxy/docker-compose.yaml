@@ -11,7 +11,9 @@ services:
       - ${PWD}/lua-resty-http/lib:/usr/local/openresty/site/lualib
     ports:
       # wake proxy itself (for reverse proxies)
-      - 8888:80
+      - 80:80
+      # uncomment for ssl
+     # - 443:443
       # add stream services here (defined in nginx.conf)
       - 2222:2222
     restart: unless-stopped
