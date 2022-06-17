@@ -6,6 +6,8 @@ RUN useradd -u 10001 sidecaruser
 WORKDIR /app
 ADD src /app/
 
+RUN go mod init znoxx.me/sidecar
+RUN go get github.com/znoxx/gowol
 RUN go build -o /sidecar
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /sidecar
 ##
