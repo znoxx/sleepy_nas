@@ -13,9 +13,9 @@ services:
       # wake proxy itself (for reverse proxies)
       - 80:80
       # uncomment for ssl
-     # - 443:443
+      # - 443:443
       # add stream services here (defined in nginx.conf)
       - 2222:2222
     restart: unless-stopped
     mem_limit: 32m
-    cpus: 0.1
+    cpus: 1
